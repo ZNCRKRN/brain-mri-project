@@ -5,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 from pathlib import Path
 
 from .inference import BrainMRIPredictor, HEATMAP_DIR
+from .inference_light import BrainMRIPredictorLight
 
 app = FastAPI(
     title="Brain MRI Tumor API",
@@ -36,11 +37,19 @@ templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "tem
 def _load_model():
     global predictor
     try:
-        predictor = BrainMRIPredictor()
+        # Memory limiti için light model kullan
+        predictor = BrainMRIPredictorLight()
+        print(" Light model yüklendi (Memory optimized)")
     except Exception as e:
-        # Server can still start; predict endpoint will fail with clear error
-        predictor = None
-        print(f"Model load failed: {e}")
+        print(f" Model yüklenemedi: {e}")
+        try:
+            # Fallback to original model
+            predictor = BrainMRIPredictor()
+            print(" Original model yüklendi (Fallback)")
+        except Exception as e2:
+            print(f" Fallback de başarısız: {e2}")
+            predictor = None
+            print(f"Model load failed: {e}")
 
 
 @app.post("/predict")
