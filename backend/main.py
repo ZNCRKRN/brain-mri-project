@@ -4,8 +4,7 @@ from fastapi.responses import FileResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 
-from .inference import BrainMRIPredictor, HEATMAP_DIR
-from .inference_light import BrainMRIPredictorLight
+from inference import BrainMRIPredictor, HEATMAP_DIR
 
 app = FastAPI(
     title="Brain MRI Tumor API",
@@ -17,7 +16,9 @@ app = FastAPI(
 origins = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
-    "https://your-domain.com",  # Bu kısmı domain ile değiştir
+    "https://brain-mri-project-production.up.railway.app",
+    "https://brain-mri-project.vercel.app",
+    "https://brain-mri-project.onrender.com",
     "*"  # Geçici olarak tüm originlere izin
 ]
 
@@ -37,19 +38,12 @@ templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "tem
 def _load_model():
     global predictor
     try:
-        # Memory limiti için light model kullan
-        predictor = BrainMRIPredictorLight()
-        print(" Light model yüklendi (Memory optimized)")
+        predictor = BrainMRIPredictor()
+        print("✅ Model yuklendi")
     except Exception as e:
-        print(f" Model yüklenemedi: {e}")
-        try:
-            # Fallback to original model
-            predictor = BrainMRIPredictor()
-            print(" Original model yüklendi (Fallback)")
-        except Exception as e2:
-            print(f" Fallback de başarısız: {e2}")
-            predictor = None
-            print(f"Model load failed: {e}")
+        print(f"❌ Model yuklenemedi: {e}")
+        predictor = None
+        print(f"Model load failed: {e}")
 
 
 @app.post("/predict")
